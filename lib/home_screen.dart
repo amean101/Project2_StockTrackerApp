@@ -42,7 +42,9 @@ class HomeScreen extends StatelessWidget {
               onPressed:
                   () => Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (_) => BrowseScreen()),
+                    MaterialPageRoute(
+                      builder: (_) => BrowseScreen(onCartUpdate: (int) {}),
+                    ),
                   ),
               child: Text('Browse Art'),
             ),

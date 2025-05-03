@@ -1,0 +1,122 @@
+import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+
+class CheckoutScreen extends StatefulWidget {
+  final List<String> cartItems;
+
+  const CheckoutScreen({Key? key, required this.cartItems}) : super(key: key);
+
+  @override
+  State<CheckoutScreen> createState() => _CheckoutScreenState();
+}
+
+class _CheckoutScreenState extends State<CheckoutScreen> {
+  final FirebaseFirestore _db = FirebaseFirestore.instance;
+  double _total = 0;
+  List<Map<String, dynamic>> _cartDetails = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCartDetails();
+  }
+
+  Future<void> _loadCartDetails() async {
+    double total = 0;
+    List<Map<String, dynamic>> items = [];
+
+    for (String itemId in widget.cartItems) {
+      final doc = await _db.collection('artworks').doc(itemId).get();
+      if (doc.exists) {
+        final data = doc.data()!;
+        items.add({...data, 'id': doc.id});
+        total += (data['price'] as num).toDouble();
+      }
+    }
+
+    setState(() {
+      _cartDetails = items;
+      _total = total;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Checkout')),
+      body: Column(
+        children: [
+          Expanded(
+            child: ListView.builder(
+              padding: const EdgeInsets.all(16),
+              itemCount: _cartDetails.length,
+              itemBuilder: (context, index) {
+                final item = _cartDetails[index];
+                return Card(
+                  margin: const EdgeInsets.only(bottom: 16),
+                  child: ListTile(
+                    leading: Image.network(
+                      item['imageUrl'],
+                      width: 50,
+                      height: 50,
+                      fit: BoxFit.cover,
+                    ),
+                    title: Text(item['title']),
+                    subtitle: Text('\$${item['price'].toStringAsFixed(2)}'),
+                    trailing: IconButton(
+                      icon: const Icon(Icons.remove_circle_outline),
+                      onPressed: () {
+                        setState(() {
+                          _cartDetails.removeAt(index);
+                          _total -= (item['price'] as num).toDouble();
+                        });
+                      },
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.grey[200],
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+            ),
+            child: Column(
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text('Total:', style: TextStyle(fontSize: 18)),
+                    Text(
+                      '\$${_total.toStringAsFixed(2)}',
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: _cartDetails.isEmpty ? null : () {
+                      // Implement checkout logic
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Purchase completed!')),
+                      );
+                      Navigator.pop(context);
+                    },
+                    child: const Text('Complete Purchase'),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}

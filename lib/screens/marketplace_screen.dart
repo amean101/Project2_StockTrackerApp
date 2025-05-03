@@ -9,7 +9,7 @@ class MarketplaceScreen extends StatelessWidget {
       Uri.parse('http://api.exchangeratesapi.io/v1/latest?access_key=YOUR_KEY'),
     );
     final rates = jsonDecode(res.body)['rates'];
-    return usd * rates['EUR']; // Example conversion to EUR
+    return usd * rates['EUR'];
   }
 
   @override
